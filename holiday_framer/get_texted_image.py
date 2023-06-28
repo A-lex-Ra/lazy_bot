@@ -13,7 +13,8 @@ def get_texted_from(image_path: str, text: str, font: str = None, fontsize: int 
     if density:
         cl["density"] = density
     extra_layer = generate_fontimg(text, **cl)
-    extra_layer.save(f"avatars/layer_{vars.layer_counter}.png")
+    if text != "В ОТПУСКЕ":
+        extra_layer.save(f"avatars/layer_{vars.layer_counter}.png")
     vars.layer_counter += 1
 
     with Image.open(image_path) as img:
