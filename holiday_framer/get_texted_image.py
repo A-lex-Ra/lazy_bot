@@ -25,8 +25,8 @@ def get_texted_from(image_path: str, text: str, font: str = None, fontsize: int 
         img = img.crop((0, (img.size[1] - img.size[0]) // 2, img.size[0], (img.size[1] + img.size[0]) // 2))
 
     crop_size = max(img.size)
-    forward = extra_layer.resize((crop_size, crop_size))
-    img.paste(forward, (0, 0), forward)
+    front = extra_layer.resize((crop_size, crop_size))
+    img.paste(front, (0, 0), front)
     print(img.size)
 
     return img

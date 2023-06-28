@@ -1,7 +1,9 @@
 import telebot as telebot
+from PIL import Image
 from telebot.types import PhotoSize
 from holiday_framer.get_texted_image import get_texted_from
 import vars
+from io import BytesIO
 
 bot = telebot.TeleBot(vars.bot_token)
 
@@ -14,10 +16,10 @@ def start(message: telebot.types.Message):
     userpics = bot.get_user_profile_photos(userid)
     userpic = userpics.photos[0][-1]
 
-    send_holiday(userpic, userid, message.from_user.username)
-
     bot.send_message(userid, "Просто скинь фото и расслабься – вот мой девиз.\n"
-                             "(вы можете присылать любые фотографии, чтобы сделать их relaxing)")
+                             "Отправив фотографию, вы получите надпись \"В\xA0ОТПУСКЕ\", "
+                             "чтобы получить кастомную надпись отправьте фото с текстом под ним.")
+    send_holiday(userpic, userid, message.from_user.username)
 
 
 @bot.message_handler(content_types=["photo"])
@@ -25,6 +27,7 @@ def photo_handle(message: telebot.types.Message):
     userid = message.chat.id
     print(userid)
     print(message.chat)
+    print(message)
     # for k in dir(message):
     #     if getattr(message, k) is not None and k[0] != "_":
     #         print(k, ':', getattr(message, k))
@@ -32,13 +35,22 @@ def photo_handle(message: telebot.types.Message):
     photosizes = message.photo
     photo = photosizes[-1]
 
-    send_holiday(photo, userid, message.from_user.username)
+    if message.caption:
+        send_holiday(photo, userid, message.from_user.username, message.caption)
+    else:
+        send_holiday(photo, userid, message.from_user.username)
 
 
-def send_holiday(photo, chat_id, username="unknown"):
+def send_holiday(photo, chat_id, username="unknown", text="В ОТПУСКЕ"):
     path = f"avatars/{username}_{photo.file_unique_id}.png"
     save_photo(photo, path)
-    send_photo(get_texted_from(path, "В ОТПУСКЕ", font="Geologica-Bold.ttf"), chat_id)
+    try:
+        texted_photo = get_texted_from(path, text, font="Geologica-Bold.ttf")
+        send_photo(texted_photo, chat_id)
+        send_photo_old(texted_photo, chat_id)
+    except Exception as e:
+        bot.send_message(chat_id, "Что-то пошло не так.")
+        raise e
 
 
 def save_photo(photo: PhotoSize, path: str):
@@ -48,7 +60,14 @@ def save_photo(photo: PhotoSize, path: str):
         new_file.write(file)
 
 
-def send_photo(photo, chat_id):
+def send_photo(photo: Image.Image, chat_id):
+    byte_io = BytesIO()
+    photo.save(byte_io, 'png')
+    byte_io.seek(0)
+    bot.send_document(chat_id, byte_io, visible_file_name="high-res.png")
+
+
+def send_photo_old(photo, chat_id):
     bot.send_photo(chat_id, photo)
 
 
